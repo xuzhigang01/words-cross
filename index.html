@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Words-Cross</title>
+<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<style type="text/css">
+td {
+	width: 37px;
+	height: 37px;
+	text-align: center;
+}
+
+.table-bordered td.content {
+	background-color: #dcdcdc;
+	border-color: gray;
+}
+</style>
+</head>
+<body>
+	<div style="height: 40px; background-color: #eff3f8; margin-bottom: 15px;">
+		<div class="container" style="line-height: 40px; font-size: 24px;">Words-Cross Builder</div>
+	</div>
+	<div class="container form-horizontal">
+		<p>
+			<input type="text" id="letters" class="form-control" style="display: inline-block; width: 130px;" value="letters"
+				required /> &nbsp;
+			<button type="button" class="btn btn-primary" onclick="genWords()">Generate Words</button>
+		</p>
+		<div class="row">
+			<div class="col-md-6">
+				<textarea id="words" class="form-control" rows="3" style="resize: none;"></textarea>
+			</div>
+			<div class="col-md-6"></div>
+		</div>
+		<div class="row">
+			<div class="col-md-6" style="heigh: 34px; margin-top: 10px;">
+				<label style="font-size: 20px;">Cross:</label> &nbsp; <span id="size"></span>
+				<button type="button" class="btn btn-primary pull-right" onclick="buildCross()">Build Cross</button>
+			</div>
+			<div class="col-md-6"></div>
+		</div>
+		<div>
+			<table id="crossTable" class="table table-bordered" role="grid" style="width: auto; margin-bottom: 10px;">
+				<tbody></tbody>
+			</table>
+		</div>
+		<p>
+			<span class="error hidden" style="color: red;"></span>
+		</p>
+	</div>
+
+	<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script type="text/javascript">
+		function genWords() {
+			var letters = $('#letters').val();
+			if (!letters) {
+				return;
+			}
+			$.get("genwords?letters=" + letters, function(resp) {
+				if (Array.isArray(resp) && resp.length > 0) {
+					var s = '';
+					for ( var i in resp) {
+						s += ', ' + resp[i];
+					}
+					$('#words').val(s.substring(2));
+				}
+			});
+		}
+
+		function buildCross() {
+			$.ajax('buildcross', {
+				type : 'POST',
+				data : {
+					words : $('#words').val()
+				},
+				cache : false,
+				success : function(data) {
+					$('.error').addClass('hidden');
+					showCross(data);
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					$('#size').text('');
+					$('#crossTable>tbody').html('');
+					$('.error').html(jqXHR.responseText).removeClass('hidden');
+				}
+			});
+		}
+
+		function showCross(data) {
+			$('#size').text(data.width + ' x ' + data.height);
+
+			var s = '';
+			for (var w = data.width, h = data.height, y = 0; y < h; y++) {
+				s += '<tr>';
+				for (var x = 0; x < w; x++) {
+					s += '<td id="td-' + x + '-' + y + '"></td>';
+				}
+				s += '</tr>';
+			}
+			$('#crossTable>tbody').html(s);
+
+			var words = data.words;
+			for ( var i in words) {
+				var o = words[i];
+				var w = o.w, x = o.x, y = o.y, d = o.d;
+				for ( var j in w) {
+					$('#crossTable>tbody').find('#td-' + x + '-' + y).addClass(
+							'content').text(w[j]);
+					d == 0 ? x++ : y++;
+				}
+			}
+		}
+	</script>
+</body>
+</html>
